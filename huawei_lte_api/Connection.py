@@ -25,13 +25,15 @@ def _try_or_reload_and_retry(fn):
 
 class Connection:
     csfr_re = re.compile(r'name="csrf_token"\s+content="(\S+)"')
-    cookie_jar = None
+    session = None
+    verify_ssl = True
     request_verification_tokens = []
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, verify_ssl: bool=True):
         if not url.endswith('/'):
             raise Exception('URL must end with /')
         self.url = url
+        self.verify_ssl = verify_ssl
         self._initialize_csfr_tokens_and_session()
 
     def reload(self):
@@ -79,11 +81,11 @@ class Connection:
 
     def _initialize_csfr_tokens_and_session(self):
         # Reset
+        self.session = requests.session()
+        self.session.verify = self.verify_ssl
         self.request_verification_tokens = []
 
-        response = requests.get(self.url)
-        self.cookie_jar = response.cookies
-
+        response = self.session.get(self.url)
         csfr_tokens = self.csfr_re.findall(response.content.decode('UTF-8'))
         if csfr_tokens:
             self.request_verification_tokens = csfr_tokens
@@ -110,16 +112,12 @@ class Connection:
         else:
             headers['__RequestVerificationToken'] = self.request_verification_tokens[0]
 
-        response = requests.post(
+        response = self.session.post(
             self._build_final_url(endpoint, prefix),
             self._create_request_xml(data, dicttoxml_xargs) if data else '',
-            headers=headers,
-            cookies=self.cookie_jar
+            headers=headers
         )
         response.raise_for_status()
-
-        if response.cookies:
-            self.cookie_jar = response.cookies
 
         data = self._check_response_status(self._process_response_xml(response.content))
 
@@ -143,11 +141,10 @@ class Connection:
         if len(self.request_verification_tokens) == 1:
             headers['__RequestVerificationToken'] = self.request_verification_tokens[0]
 
-        response = requests.get(
+        response = self.session.get(
             self._build_final_url(endpoint, prefix),
-            params,
+            params=params,
             headers=headers,
-            cookies=self.cookie_jar
         )
 
         return self._check_response_status(self._process_response_xml(response.content))

@@ -25,8 +25,8 @@ class AuthorizedConnection(Connection):
     login_time = None
     logged_in = False
 
-    def __init__(self, url: str, username: str=None, password: str=None, login_on_demand: bool=False):
-        super(AuthorizedConnection, self).__init__(url)
+    def __init__(self, url: str, username: str=None, password: str=None, login_on_demand: bool=False, verify_ssl: bool=True):
+        super(AuthorizedConnection, self).__init__(url, verify_ssl=verify_ssl)
         parsed_url = urlparse(url)
 
         username = username if username else parsed_url.username
