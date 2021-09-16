@@ -10,7 +10,7 @@ class AuthorizedConnection(Connection):
     login_time = None
     logged_in = False
 
-    def __init__(self, url: str, username: Optional[str]=None, password: Optional[str]=None,
+    def __init__(self, url: str, proxies: dict[str, str], username: Optional[str]=None, password: Optional[str]=None,
                  login_on_demand: bool=False, timeout: Union[float, Tuple[float, float], None] = None):
         # Auth info embedded in the URL may reportedly cause problems, strip it
         parsed_url = urlparse(url)
@@ -19,7 +19,7 @@ class AuthorizedConnection(Connection):
             parsed_url.netloc.rpartition("@")[-1],
             *parsed_url[2:]
         ))
-        super().__init__(clear_url, timeout=timeout)
+        super().__init__(clear_url, proxies=proxies, timeout=timeout)
         username = username if username else parsed_url.username
         password = password if password else parsed_url.password
 

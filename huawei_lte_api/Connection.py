@@ -36,8 +36,9 @@ class Connection:
     csrf_re = re.compile(r'name="csrf_token"\s+content="(\S+)"')
     request_verification_tokens = []  # type: List[str]
 
-    def __init__(self, url: str, timeout: Union[float, Tuple[float, float], None] = None):
+    def __init__(self, url: str, proxies: dict[str, str], timeout: Union[float, Tuple[float, float], None] = None):
         self.session = requests.Session()
+        self.session.proxies = proxies
         self.url = url
         self.timeout = timeout
         if not self.url.endswith('/'):
